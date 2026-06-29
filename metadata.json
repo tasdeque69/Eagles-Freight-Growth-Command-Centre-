@@ -1,0 +1,6 @@
+{
+  "name": "Eagles Freight Growth Command Center",
+  "description": "Mobile-first KPI and routine tracker for freight forwarding business development at The Eagles Company.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
