@@ -65,7 +65,7 @@ export default function FreightJournal() {
     try {
       await dataService.deleteJournalEntry(userId, row.id);
       alert('Journal entry deleted successfully.');
-      loadEntries();
+      await loadEntries();
     } catch (err: any) {
       alert(err.message || 'Failed to delete entry');
     }

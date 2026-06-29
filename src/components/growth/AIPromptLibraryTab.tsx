@@ -69,7 +69,7 @@ export default function AIPromptLibraryTab({ userId, onUpdate }: { userId: strin
         if (error) throw error;
       }
       setIsEditing(false);
-      fetchPrompts();
+      await fetchPrompts();
       onUpdate();
     } catch (err: any) {
       console.error("handleSave error", err);
@@ -89,7 +89,7 @@ export default function AIPromptLibraryTab({ userId, onUpdate }: { userId: strin
       setLoading(true);
       await dataService.deleteRecord(tableName, item.id);
       alert('Record deleted successfully.');
-      fetchPrompts();
+      await fetchPrompts();
       onUpdate();
     } catch (err: any) {
       console.error("handleDelete error", err);

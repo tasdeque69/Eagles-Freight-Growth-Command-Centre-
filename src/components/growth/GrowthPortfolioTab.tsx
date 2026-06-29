@@ -65,7 +65,7 @@ export default function GrowthPortfolioTab({ userId, onUpdate }: { userId: strin
         if (error) throw error;
       }
       setIsEditing(false);
-      fetchPortfolio();
+      await fetchPortfolio();
       onUpdate();
     } catch (err: any) {
       console.error("handleSave error", err);
@@ -85,7 +85,7 @@ export default function GrowthPortfolioTab({ userId, onUpdate }: { userId: strin
       setLoading(true);
       await dataService.deleteRecord(tableName, item.id);
       alert('Record deleted successfully.');
-      fetchPortfolio();
+      await fetchPortfolio();
       onUpdate();
     } catch (err: any) {
       console.error("handleDelete error", err);

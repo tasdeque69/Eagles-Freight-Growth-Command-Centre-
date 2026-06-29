@@ -1,65 +1,111 @@
-# GLOBAL DELETE BUG AUDIT & REPAIR LOG
+# BUG FIX NOTES — Global Delete Function
 
-## 1. Root Cause Analysis of Global Delete Failure
+## 1. What was broken
 
-Through a complete code-level audit of the deletion flows, the previous deletion architecture failed globally due to three concurrent issues:
+Delete was unreliable globally across the app. The project already had an attempted central delete helper, but the implementation was still incomplete and the repo had a TypeScript error in the diagnostics flow.
 
-1. **Predicative Context and Authentication Mismatch**:
-   - Deletion queries in the service were targeting record IDs, but lacked explicit `user_id` parameters in the database query conditions.
-   - Row Level Security (RLS) policies on Supabase prevent deletes unless the query explicitly specifies a `.eq('user_id', authenticated_user_id)` predicate or the user is authenticated in the current session. Because the previous `deleteRecord` method did not properly extract the authenticated user's ID and attach it to the Supabase filter, Supabase silently rejected the operation with 0 rows affected.
+## 2. Root cause found
 
-2. **Form Submission Interception / Missing Button Types**:
-   - Multiple delete buttons within the tabs and cards were placed within container blocks that lacked explicit `type="button"` attributes. In React/Vite/Tailwind forms, clicking these buttons caused parent form submissions or standard page refresh behavior instead of launching the standalone delete event handlers.
+The issue was not one single visible button. It was the global delete pathway:
 
-3. **Stale UI States & Sync Failures**:
-   - The separation between the cloud database (Supabase) and local storage fallback (offline mode) meant that offline deletes failed to clear the correct table keys, and successful cloud deletes did not cascade properly to local storage.
+1. `src/lib/deleteRecord.ts` did not guard against missing Supabase configuration and could crash in local/demo mode.
+2. `src/lib/deleteRecord.ts` allowed arbitrary table names instead of using a safe table allowlist.
+3. The app needed a strict delete verification pattern: delete by `id`, filter by `user_id`, then `.select('id')` and reject zero deleted rows.
+4. `Settings.tsx` called `dataService.getSupabaseClient()`, but `dataService` did not provide that method. This caused `npm run lint` / `tsc --noEmit` to fail.
+5. Several delete handlers triggered a refetch after deletion but did not await the refetch, making UI verification weaker.
+6. Supabase may also block deletes unless explicit DELETE grants and DELETE RLS policies exist. A safe SQL patch has been added as `SUPABASE_DELETE_POLICY_PATCH.sql`.
 
----
+## 3. Files changed
 
-## 2. Implemented Fixes
+- `src/lib/deleteRecord.ts`
+- `src/lib/dataService.ts`
+- `src/pages/ProspectTracker.tsx`
+- `src/pages/CustomerTouchTracker.tsx`
+- `src/pages/ShipmentFileStudy.tsx`
+- `src/pages/RouteCards.tsx`
+- `src/pages/FreightJournal.tsx`
+- `src/components/growth/FiveYearRoadmapTab.tsx`
+- `src/components/growth/AnnualGoalsTab.tsx`
+- `src/components/growth/QuarterlySprintsTab.tsx`
+- `src/components/growth/SkillMatrixTab.tsx`
+- `src/components/growth/MarketIntelligenceTab.tsx`
+- `src/components/growth/AIPromptLibraryTab.tsx`
+- `src/components/growth/GrowthPortfolioTab.tsx`
+- `SUPABASE_DELETE_POLICY_PATCH.sql`
+- `DELETE_FIX_GUIDE.md`
+- `BUG_FIX_NOTES.md`
+- `test_delete.ts`
 
-### Step 1: Standardized Reusable Delete Service (`src/lib/deleteRecord.ts`)
-Created a standalone, centralized `deleteRecord` helper that acts as the single source of truth for all record deletions across the application.
-- Enforces strict parameter validation (throws on missing ID or table).
-- Performs live session checking to retrieve the user's ID.
-- Automatically applies the `.eq('user_id', userId)` filter on all user-owned tables.
-- Leverages the `.select()` post-delete check to verify exactly how many rows were removed from the cloud.
-- Performs equivalent LocalStorage cascading deletes to maintain local-cloud parity.
+## 4. Delete function pattern used
 
-### Step 2: Integrated into `dataService.ts`
-Overhauled `dataService` so that all entity-specific delete methods (`deleteProspect`, `deleteCustomerTouch`, `deleteShipmentFile`, `deleteRouteCard`, `deleteJournalEntry`, `deleteAgent`, `deleteAgentTouch`, `deleteWeeklyReview`, and generic `deleteRecord`) route directly through this standardized handler.
+For user-owned tables:
 
-### Step 3: Fixed Components & Buttons (Step 4 & Step 5)
-Refactored every delete interaction in the application:
-1. **FiveYearRoadmapTab.tsx**
-2. **AnnualGoalsTab.tsx**
-3. **QuarterlySprintsTab.tsx**
-4. **SkillMatrixTab.tsx**
-5. **MarketIntelligenceTab.tsx**
-6. **AIPromptLibraryTab.tsx**
-7. **GrowthPortfolioTab.tsx**
-8. **ProspectTracker.tsx**
-9. **CustomerTouchTracker.tsx**
-10. **ShipmentFileStudy.tsx**
-11. **RouteCards.tsx**
-12. **FreightJournal.tsx**
+```ts
+await supabase
+  .from(tableName)
+  .delete()
+  .eq('id', recordId)
+  .eq('user_id', user.id)
+  .select('id');
+```
 
-Each view was updated to:
-- Pass the entire record object to the handler instead of just an ID.
-- Print detailed debug logs before starting the deletion process.
-- Configure delete buttons with `type="button"` to prevent form submission side-effects.
+For `profiles`:
 
----
+```ts
+await supabase
+  .from('profiles')
+  .delete()
+  .eq('id', user.id)
+  .select('id');
+```
 
-## 3. Added Temporary Delete Diagnostics Panel
-We integrated a robust diagnostics section inside `Settings.tsx` allowing you to:
-- Select any database table.
-- Retrieve the 5 latest records belonging to the currently logged-in user.
-- Force test-delete any record via the central delete API and observe real-time RLS success or error logs.
+The helper throws an error if no row is deleted.
 
----
+## 5. Tables covered
 
-## 4. Verification Results
-- All components compile cleanly.
-- RLS context is fully verified.
-- Local storage and live database collections are perfectly synchronized.
+Level 1:
+
+- `prospects`
+- `customer_touches`
+- `shipment_files`
+- `route_cards`
+- `journal_entries`
+- `agents`
+- `agent_touches`
+- `weekly_reviews`
+
+Level 2:
+
+- `five_year_roadmap`
+- `annual_goals`
+- `quarterly_sprints`
+- `skill_matrix`
+- `market_intelligence`
+- `ai_prompt_library`
+- `growth_portfolio`
+
+## 6. What was not changed
+
+- Level 1 Daily KPI formula was not changed.
+- Weekly KPI formula was not changed.
+- Login logic was not redesigned.
+- Supabase keys were not touched.
+- No service role key was used.
+- RLS was not disabled.
+- No real company data was added.
+- Hardcoded test credentials were removed from `test_delete.ts`; it now reads test credentials from local environment variables only.
+
+## 7. Validation completed locally
+
+These checks passed locally after the patch:
+
+```bash
+npm run lint
+npm run build
+```
+
+A live Supabase delete test still requires running the SQL patch in Supabase and testing through the app with the demo account.
+
+## 8. Remaining live action
+
+Run `SUPABASE_DELETE_POLICY_PATCH.sql` once in Supabase SQL Editor. Then test delete on one dummy `prospects` row first. If it passes after browser refresh and Supabase Table Editor confirmation, continue table-by-table.

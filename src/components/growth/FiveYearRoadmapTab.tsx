@@ -91,7 +91,7 @@ export default function FiveYearRoadmapTab({ userId, onUpdate }: { userId: strin
       setLoading(true);
       await dataService.deleteRecord(tableName, item.id);
       alert('Record deleted successfully.');
-      fetchRoadmap();
+      await fetchRoadmap();
       onUpdate();
     } catch (err: any) {
       console.error("handleDelete error", err);

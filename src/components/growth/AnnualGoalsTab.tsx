@@ -67,7 +67,7 @@ export default function AnnualGoalsTab({ userId, onUpdate }: { userId: string, o
         if (error) throw error;
       }
       setIsEditing(false);
-      fetchGoals();
+      await fetchGoals();
       onUpdate();
     } catch (err: any) {
       console.error("handleSave error", err);
@@ -87,7 +87,7 @@ export default function AnnualGoalsTab({ userId, onUpdate }: { userId: string, o
       setLoading(true);
       await dataService.deleteRecord(tableName, item.id);
       alert('Record deleted successfully.');
-      fetchGoals();
+      await fetchGoals();
       onUpdate();
     } catch (err: any) {
       console.error("handleDelete error", err);

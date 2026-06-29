@@ -73,7 +73,7 @@ export default function MarketIntelligenceTab({ userId, onUpdate }: { userId: st
         if (error) throw error;
       }
       setIsEditing(false);
-      fetchIntel();
+      await fetchIntel();
       onUpdate();
     } catch (err: any) {
       console.error("handleSave error", err);
@@ -93,7 +93,7 @@ export default function MarketIntelligenceTab({ userId, onUpdate }: { userId: st
       setLoading(true);
       await dataService.deleteRecord(tableName, item.id);
       alert('Record deleted successfully.');
-      fetchIntel();
+      await fetchIntel();
       onUpdate();
     } catch (err: any) {
       console.error("handleDelete error", err);

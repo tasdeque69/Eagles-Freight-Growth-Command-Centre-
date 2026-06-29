@@ -63,7 +63,7 @@ export default function SkillMatrixTab({ userId, onUpdate }: { userId: string, o
         if (error) throw error;
       }
       setIsEditing(false);
-      fetchSkills();
+      await fetchSkills();
       onUpdate();
     } catch (err: any) {
       console.error("handleSave error", err);
@@ -83,7 +83,7 @@ export default function SkillMatrixTab({ userId, onUpdate }: { userId: string, o
       setLoading(true);
       await dataService.deleteRecord(tableName, item.id);
       alert('Record deleted successfully.');
-      fetchSkills();
+      await fetchSkills();
       onUpdate();
     } catch (err: any) {
       console.error("handleDelete error", err);

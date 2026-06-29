@@ -73,7 +73,7 @@ export default function QuarterlySprintsTab({ userId, onUpdate }: { userId: stri
         if (error) throw error;
       }
       setIsEditing(false);
-      fetchSprints();
+      await fetchSprints();
       onUpdate();
     } catch (err: any) {
       console.error("handleSave error", err);
@@ -93,7 +93,7 @@ export default function QuarterlySprintsTab({ userId, onUpdate }: { userId: stri
       setLoading(true);
       await dataService.deleteRecord(tableName, item.id);
       alert('Record deleted successfully.');
-      fetchSprints();
+      await fetchSprints();
       onUpdate();
     } catch (err: any) {
       console.error("handleDelete error", err);

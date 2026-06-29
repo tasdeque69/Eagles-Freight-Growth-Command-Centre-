@@ -65,7 +65,7 @@ export default function RouteCards() {
     try {
       await dataService.deleteRouteCard(userId, row.id);
       alert('Route card deleted successfully.');
-      loadRoutes();
+      await loadRoutes();
     } catch (err: any) {
       alert(err.message || 'Failed to delete route card');
     }

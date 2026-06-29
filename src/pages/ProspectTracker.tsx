@@ -73,7 +73,7 @@ export default function ProspectTracker() {
     try {
       await dataService.deleteProspect(userId, row.id);
       alert('Prospect deleted successfully.');
-      loadProspects();
+      await loadProspects();
     } catch (err: any) {
       alert(err.message || 'Failed to delete prospect');
     }

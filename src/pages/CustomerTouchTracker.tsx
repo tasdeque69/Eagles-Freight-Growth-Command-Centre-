@@ -74,7 +74,7 @@ export default function CustomerTouchTracker() {
     try {
       await dataService.deleteCustomerTouch(userId, row.id);
       alert('Record deleted successfully.');
-      loadData();
+      await loadData();
     } catch (err: any) {
       alert(err.message || 'Failed to delete record');
     }

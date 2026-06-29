@@ -65,7 +65,7 @@ export default function ShipmentFileStudy() {
     try {
       await dataService.deleteShipmentFile(userId, row.id);
       alert('Shipment file study deleted successfully.');
-      loadShipments();
+      await loadShipments();
     } catch (err: any) {
       alert(err.message || 'Failed to delete file');
     }

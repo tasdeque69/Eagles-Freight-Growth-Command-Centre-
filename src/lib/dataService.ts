@@ -448,6 +448,10 @@ export const dataService = {
     }
   },
 
+  getSupabaseClient() {
+    return supabase;
+  },
+
   // --- PROFILE SERVICES ---
   async getProfile(userId: string): Promise<Profile | null> {
     if (isSupabaseConfigured && supabase) {
